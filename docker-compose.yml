@@ -1,0 +1,42 @@
+name: taraqqub-shabaki
+
+services:
+  app:
+    build: .
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      TARAQQUB_DB_PATH: /data/taraqqub.db
+      TARAQQUB_MONITOR_INTERVAL: 10
+      TARAQQUB_ENABLE_SELF_HEALING: "false"
+      TARAQQUB_ENV: production
+      TARAQQUB_ADMIN_USERNAME: admin
+      TARAQQUB_ADMIN_PASSWORD: "${TARAQQUB_ADMIN_PASSWORD:?Set TARAQQUB_ADMIN_PASSWORD}"
+      TARAQQUB_SESSION_HOURS: 12
+      TARAQQUB_SECURE_COOKIES: "${TARAQQUB_SECURE_COOKIES:-false}"
+      TARAQQUB_SCAN_NETWORK: "${TARAQQUB_SCAN_NETWORK:-}"
+      TARAQQUB_SCAN_GATEWAY: "${TARAQQUB_SCAN_GATEWAY:-}"
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - taraqqub-data:/data
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).read()"
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  taraqqub-data:

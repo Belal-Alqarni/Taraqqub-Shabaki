@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: taraqqub-shabaki-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: TARAQQUB_ENV
+        value: production
+      - key: TARAQQUB_PUBLIC_DEMO
+        value: "true"
+      - key: TARAQQUB_SECURE_COOKIES
+        value: "true"
+      - key: TARAQQUB_DB_PATH
+        value: /tmp/taraqqub.db
+      - key: TARAQQUB_MONITOR_INTERVAL
+        value: "10"
+      - key: TARAQQUB_ENABLE_SELF_HEALING
+        value: "false"
+      - key: TARAQQUB_ADMIN_USERNAME
+        value: admin
+      - key: TARAQQUB_ADMIN_PASSWORD
+        generateValue: true
+      - key: TARAQQUB_SESSION_HOURS
+        value: "4"

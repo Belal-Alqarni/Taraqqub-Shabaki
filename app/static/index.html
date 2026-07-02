@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ترقّب شبكي | Taraqqub Shabaki</title>
+    <link rel="stylesheet" href="/static/styles.css?v=6">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <strong><span lang="ar" dir="rtl">ترقّب شبكي</span> | Taraqqub Shabaki</strong>
+          <small>Network Operations Center</small>
+        </div>
+      </div>
+      <nav>
+        <a class="active" href="#overview">Overview</a>
+        <a href="#devices">Devices</a>
+        <a href="#topology">Topology</a>
+        <a href="#assistant">Incident Advisor</a>
+        <a id="usersNav" class="hidden" href="#users">Users</a>
+      </nav>
+      <div class="session-controls">
+        <span id="sessionUser">Authenticated user</span>
+        <button id="logoutBtn" class="secondary-button" type="button">Sign out</button>
+      </div>
+    </aside>
+
+    <main>
+      <section id="overview" class="topbar">
+        <div>
+          <h1>Network Operations Center</h1>
+          <p>Real-time visibility, alerting, topology, and guided incident response.</p>
+        </div>
+        <button id="refreshBtn" type="button">Refresh</button>
+      </section>
+
+      <section class="kpis" aria-label="Network summary">
+        <article>
+          <span>Total Devices</span>
+          <strong id="totalDevices">0</strong>
+        </article>
+        <article>
+          <span>Online</span>
+          <strong id="onlineDevices">0</strong>
+        </article>
+        <article>
+          <span>Degraded</span>
+          <strong id="degradedDevices">0</strong>
+        </article>
+        <article>
+          <span>Open Alerts</span>
+          <strong id="openAlerts">0</strong>
+        </article>
+      </section>
+
+      <section id="devices" class="panel">
+        <header>
+          <h2>Device Health</h2>
+          <span id="lastUpdated">Waiting for data</span>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>IP</th>
+                <th>Role</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Latency</th>
+                <th>Loss</th>
+                <th>CPU</th>
+                <th>Memory</th>
+              </tr>
+            </thead>
+            <tbody id="deviceRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article id="topology" class="panel">
+          <header>
+            <h2>Topology</h2>
+            <button id="discoveryBtn" type="button">Scan Local Network</button>
+          </header>
+          <div id="topologyMap" class="topology-map"></div>
+          <pre id="discoveryOutput"></pre>
+        </article>
+
+        <article class="panel">
+          <header>
+            <h2>Alerts</h2>
+            <span>Latest 50</span>
+          </header>
+          <div id="alertList" class="alerts"></div>
+        </article>
+      </section>
+
+      <section id="assistant" class="panel assistant">
+        <header>
+          <h2>Incident Advisor</h2>
+          <span>Rule-based analysis</span>
+        </header>
+        <form id="assistantForm">
+          <select id="deviceSelect" aria-label="Device"></select>
+          <input id="symptomInput" placeholder="Describe the symptom, for example: app server is slow" required>
+          <button type="submit">Analyze</button>
+        </form>
+        <div id="assistantOutput" class="assistant-output"></div>
+      </section>
+
+      <section id="users" class="panel hidden">
+        <header>
+          <h2>User Access</h2>
+          <span>Invite-only accounts</span>
+        </header>
+        <form id="userForm" class="user-form">
+          <input
+            id="newUsername"
+            placeholder="Username"
+            minlength="3"
+            pattern="[A-Za-z0-9._-]+"
+            required
+          >
+          <select id="newUserRole" aria-label="User role">
+            <option value="viewer">Viewer</option>
+            <option value="operator">Operator</option>
+            <option value="admin">Administrator</option>
+          </select>
+          <button type="submit">Create user</button>
+        </form>
+        <p id="temporaryCredential" class="credential-output"></p>
+        <div class="table-wrap">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Password</th>
+              </tr>
+            </thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js?v=7"></script>
+  </body>
+</html>

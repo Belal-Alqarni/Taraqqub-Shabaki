@@ -1,0 +1,1 @@
+"""Taraqqub Shabaki application package."""

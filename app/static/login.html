@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in · ترقّب شبكي | Taraqqub Shabaki</title>
+    <link rel="stylesheet" href="/static/styles.css?v=6">
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-panel" aria-labelledby="loginTitle">
+        <div class="brand">
+          <div>
+            <strong><span lang="ar" dir="rtl">ترقّب شبكي</span> | Taraqqub Shabaki</strong>
+            <small>Secure Operations Access</small>
+          </div>
+        </div>
+        <h1 id="loginTitle">Sign in</h1>
+        <p>Use your operations account to continue.</p>
+        <form id="loginForm" class="login-form">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" required>
+          <label for="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            minlength="8"
+            required
+          >
+          <button id="loginButton" type="submit">Sign in</button>
+        </form>
+        <button id="demoButton" class="secondary-button demo-button hidden" type="button">
+          Try public demo
+        </button>
+        <p id="loginError" class="form-error" role="alert"></p>
+      </section>
+    </main>
+    <script src="/static/login.js?v=5"></script>
+  </body>
+</html>
