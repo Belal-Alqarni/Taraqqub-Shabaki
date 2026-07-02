@@ -1,5 +1,7 @@
 # ترقّب شبكي | Taraqqub Shabaki
 
+[![CI](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/actions/workflows/ci.yml/badge.svg)](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/actions/workflows/ci.yml)
+
 Secure network monitoring, discovery, alerting, topology visualization, and
 guided incident response in one self-hosted Network Operations Center.
 
