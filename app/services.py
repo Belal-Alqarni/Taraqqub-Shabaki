@@ -84,7 +84,7 @@ def discovery_preview() -> dict:
         "mode": "preview",
         "message": "Nmap discovery hook is ready. Replace preview data with authorized subnet scans.",
         "discovered": [
-            {"ip_address": "192.168.1.10", "hostname": "helpdesk-pc", "open_ports": [22, 3389]},
-            {"ip_address": "192.168.1.40", "hostname": "backup-nas", "open_ports": [22, 445, 8080]},
+            {"ip_address": "192.0.2.10", "hostname": "helpdesk-pc", "open_ports": [22, 3389]},
+            {"ip_address": "192.0.2.40", "hostname": "backup-nas", "open_ports": [22, 445, 8080]},
         ],
     }

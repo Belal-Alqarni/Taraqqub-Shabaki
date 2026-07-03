@@ -365,6 +365,17 @@ pre {
   margin-top: 12px;
 }
 
+.demo-notice {
+  margin-bottom: 18px;
+  padding: 11px 14px;
+  color: #dcecff;
+  background: #16324a;
+  border: 1px solid #2f78a8;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .hidden {
   display: none !important;
 }

@@ -86,11 +86,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
 
 
 SEED_DEVICES = [
-    ("Core Router", "192.168.1.1", "router", "Cisco", "Main Site"),
-    ("Distribution Switch", "192.168.1.2", "switch", "Cisco", "Main Site"),
-    ("Firewall", "192.168.1.254", "firewall", "Fortinet", "Edge"),
-    ("App Server", "192.168.1.20", "server", "Linux", "Server Room"),
-    ("Database Server", "192.168.1.30", "server", "Linux", "Server Room"),
+    ("Core Router", "192.0.2.1", "router", "Cisco", "Main Site"),
+    ("Distribution Switch", "192.0.2.2", "switch", "Cisco", "Main Site"),
+    ("Firewall", "192.0.2.254", "firewall", "Fortinet", "Edge"),
+    ("App Server", "192.0.2.20", "server", "Linux", "Server Room"),
+    ("Database Server", "192.0.2.30", "server", "Linux", "Server Room"),
 ]
 
 

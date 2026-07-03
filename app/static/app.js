@@ -217,6 +217,9 @@ async function bootstrap() {
   }
   document.querySelector("#sessionUser").textContent =
     `${state.session.username} · ${state.session.role}`;
+  if (state.session.username === "demo") {
+    document.querySelector("#demoNotice").classList.remove("hidden");
+  }
   if (state.session.role === "admin") {
     document.querySelector("#users").classList.remove("hidden");
     document.querySelector("#usersNav").classList.remove("hidden");
