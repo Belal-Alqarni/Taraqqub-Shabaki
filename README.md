@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/actions/workflows/ci.yml/badge.svg)](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/actions/workflows/ci.yml)
 
+[Try the live public demo](https://taraqqub-shabaki-demo.onrender.com) - viewer-only
+simulated data; the free instance can take up to a minute to wake up.
+
 Secure network monitoring, discovery, alerting, topology visualization, and
 guided incident response in one self-hosted Network Operations Center.
 
