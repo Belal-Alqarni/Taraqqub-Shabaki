@@ -18,6 +18,7 @@ class Settings:
         self.scan_network = getenv("TARAQQUB_SCAN_NETWORK", "").strip() or None
         self.scan_gateway = getenv("TARAQQUB_SCAN_GATEWAY", "").strip() or None
         self.public_demo = getenv("TARAQQUB_PUBLIC_DEMO", "false").lower() == "true"
+        self.allow_signup = getenv("TARAQQUB_ALLOW_SIGNUP", "false").lower() == "true"
 
 
 @lru_cache

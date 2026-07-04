@@ -17,5 +17,13 @@ own or have explicit authorization to assess.
 ## Public Demo Boundary
 
 The public demo uses simulated infrastructure. Network discovery is disabled
-for every account, including administrators. Real network collection must run
-locally or through the planned outbound-only site agent.
+for every account, including administrators. Real network collection runs
+through the outbound-only local agent.
+
+## Network Agent
+
+- Configure only a private IPv4 subnet you own or are authorized to monitor.
+- Treat the one-time agent token like a password and never commit it to Git.
+- The agent connects outbound to the control plane; do not expose agent ports.
+- Revoke a token immediately if its host is lost or compromised.
+- Public control-plane deployments must use HTTPS.

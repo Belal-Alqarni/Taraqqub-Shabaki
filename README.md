@@ -30,7 +30,8 @@ guided incident response in one self-hosted Network Operations Center.
 | Topology | Automatic visual map generated from the known devices |
 | Alerts | Open and acknowledged incident timeline |
 | Incident Advisor | Rule-based likely causes and recommended remediation steps |
-| Access control | Invite-only `viewer`, `operator`, and `admin` roles |
+| Access control | Isolated workspaces with `viewer`, `operator`, and `admin` roles |
+| Network Agent | Revocable token, private `/24` discovery, and outbound HTTPS reports |
 | Public demo | Viewer-only simulated environment with all network scanning disabled |
 | Deployment | Hardened Docker image, Docker Compose, health check, and Render Blueprint |
 
@@ -45,21 +46,20 @@ integration is a future milestone, not a feature claimed by the current release.
 | Operator | Viewer access plus operational alert actions |
 | Admin | User provisioning, authorized discovery, and administrative actions |
 
-Public sign-up is disabled because a NOC contains sensitive infrastructure data.
-An administrator creates each account, receives a one-time temporary password,
-and the new user must replace it before accessing the dashboard.
+Public sign-up is controlled by `TARAQQUB_ALLOW_SIGNUP`. Each signup creates an
+isolated workspace and an administrator account. Team accounts created by that
+administrator remain inside the same workspace.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     Browser["Browser dashboard"] -->|"Session cookie + CSRF"| API["FastAPI control plane"]
-    API --> DB[("SQLite")]
+    API --> DB[("Workspace-isolated data")]
     API --> Advisor["Rule-based incident advisor"]
-    API --> Collector["Ping and metrics collector"]
-    API --> Discovery["Authorized Nmap discovery"]
-    Collector --> Network["Private network"]
-    Discovery --> Network
+    Agent["Local network agent"] -->|"Bearer token + HTTPS"| API
+    Agent --> Discovery["Authorized private /24 discovery"]
+    Discovery --> Network["User private network"]
 ```
 
 The public portfolio deployment uses simulated devices only. It does not have a
@@ -72,9 +72,9 @@ flowchart LR
     Demo -.- Blocked["Discovery disabled for every account"]
 ```
 
-The planned multi-tenant architecture moves collection into an outbound-only
-site agent. Each customer installs the agent inside their own network, and the
-agent sends approved telemetry to the control plane over HTTPS.
+The control plane never initiates a connection into a user's LAN. The local
+agent discovers only an explicitly configured private IPv4 subnet and sends
+approved telemetry outbound over HTTPS.
 
 ## Security Controls
 
@@ -82,6 +82,10 @@ agent sends approved telemetry to the control plane over HTTPS.
 - `HttpOnly` and `SameSite=Strict` session cookies; `Secure` cookies in production.
 - CSRF tokens on state-changing authenticated requests.
 - Login and public-demo rate limiting.
+- Signup and agent-report rate limiting.
+- Workspace filtering on devices, metrics, alerts, users, and agents.
+- Agent tokens stored only as SHA-256 hashes and revocable at any time.
+- Agent reports restricted to private IPv4 addresses and 256 devices per report.
 - Role checks on administrative and operational endpoints.
 - Mandatory password change for newly provisioned users.
 - Session revocation after password changes.
@@ -130,6 +134,28 @@ The development fallback password is for localhost development only. Production
 mode refuses to start with that password or with a password shorter than 12
 characters.
 
+## Connect A Network Agent
+
+1. Sign in as a workspace administrator.
+2. Open **Network Agents** and create a token. The token is shown once.
+3. Clone this repository on a machine inside the authorized network.
+4. Build and run the agent:
+
+```powershell
+docker build -f Dockerfile.agent -t taraqqub-agent .
+docker run --rm --read-only --cap-drop ALL `
+  --security-opt no-new-privileges `
+  -e TARAQQUB_SERVER_URL=https://your-taraqqub-server.example `
+  -e TARAQQUB_AGENT_TOKEN=the-one-time-token `
+  -e TARAQQUB_AGENT_NETWORK=192.168.1.0/24 `
+  -e TARAQQUB_AGENT_INTERVAL=60 `
+  taraqqub-agent
+```
+
+The subnet must be private IPv4 and no larger than `/24`. Use only a network
+you own or are explicitly authorized to monitor. Revoke a lost agent token from
+the dashboard immediately.
+
 ## Public Demo
 
 The included `render.yaml` creates a portfolio-safe deployment:
@@ -149,6 +175,7 @@ Connect the repository to a Render Blueprint to receive an HTTPS
 
 ```text
 app/
+  agents.py        Agent tokens, authentication, rate limits, and ingestion
   main.py          FastAPI routes and security middleware
   auth.py          Authentication, sessions, roles, CSRF, and audit events
   collectors.py    Monitoring collectors
@@ -157,21 +184,23 @@ app/
   database.py      SQLite schema and connection handling
   services.py      Devices, metrics, alerts, and topology services
   static/          Dashboard and authentication UI
+agent/
+  taraqqub_agent.py  Outbound-only local network collector
 Dockerfile         Hardened application image
+Dockerfile.agent   Hardened local agent image
 docker-compose.yml Local private deployment
 render.yaml        Safe public-demo deployment
 ```
 
 ## Roadmap
 
-1. Build an outbound-only site agent for each monitored network.
+1. Add PostgreSQL production storage and schema migrations.
 2. Add SNMP collectors and encrypted credential storage.
 3. Add email, Telegram, Slack, and Discord notification channels.
 4. Add Packet Tracer and GNS3 lab profiles.
 5. Add approval-controlled self-healing runbooks.
-6. Add PostgreSQL and multi-tenant organization isolation.
-7. Add an optional real LLM integration for incident summaries.
-8. Add automated tests, historical charts, reports, and export workflows.
+6. Add an optional real LLM integration for incident summaries.
+7. Add automated tests, historical charts, reports, and export workflows.
 
 ## Responsible Use
 

@@ -1,10 +1,10 @@
 from app.services import list_devices, recent_metrics
 
 
-def analyze_incident(device_id: int | None, symptom: str) -> dict:
-    devices = list_devices()
+def analyze_incident(user: dict, device_id: int | None, symptom: str) -> dict:
+    devices = list_devices(user)
     device = next((item for item in devices if item["id"] == device_id), None) if device_id else None
-    metrics = recent_metrics(device_id=device_id, limit=1)
+    metrics = recent_metrics(user, device_id=device_id, limit=1)
     latest = metrics[0] if metrics else {}
 
     findings: list[str] = []

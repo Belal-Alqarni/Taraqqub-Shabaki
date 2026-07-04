@@ -19,6 +19,7 @@
         <a href="#devices">Devices</a>
         <a href="#topology">Topology</a>
         <a href="#assistant">Incident Advisor</a>
+        <a id="agentsNav" class="hidden" href="#agents">Network Agents</a>
         <a id="usersNav" class="hidden" href="#users">Users</a>
       </nav>
       <div class="session-controls">
@@ -151,8 +152,33 @@
           </table>
         </div>
       </section>
+
+      <section id="agents" class="panel hidden">
+        <header>
+          <h2>Network Agents</h2>
+          <span>Outbound HTTPS collectors</span>
+        </header>
+        <form id="agentForm" class="user-form">
+          <input id="agentName" placeholder="Agent name" minlength="2" maxlength="80" required>
+          <button type="submit">Create agent token</button>
+        </form>
+        <pre id="agentCredential" class="agent-credential"></pre>
+        <div class="table-wrap">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Last seen</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="agentRows"></tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
-    <script src="/static/app.js?v=7"></script>
+    <script src="/static/app.js?v=8"></script>
   </body>
 </html>

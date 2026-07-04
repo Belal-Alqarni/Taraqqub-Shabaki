@@ -3,7 +3,9 @@ const state = {
   alerts: [],
   topology: null,
   session: null,
+  publicConfig: null,
   users: [],
+  agents: [],
 };
 
 async function api(path, options = {}) {
@@ -41,6 +43,13 @@ function fmt(value, suffix = "") {
   return `${Number(value).toFixed(1)}${suffix}`;
 }
 
+function sourceLabel(source) {
+  if (source === "agent") return "agent";
+  if (source === "discovered") return "live";
+  if (source === "manual") return "manual";
+  return "demo";
+}
+
 function renderKpis() {
   const total = state.devices.length;
   const online = state.devices.filter((item) => item.status === "online").length;
@@ -59,7 +68,7 @@ function renderDevices() {
       <td>${escapeHtml(device.name)}</td>
       <td>${escapeHtml(device.ip_address)}</td>
       <td>${escapeHtml(device.role)}</td>
-      <td>${device.source === "discovered" ? "live" : "demo"}</td>
+      <td>${sourceLabel(device.source)}</td>
       <td><span class="status ${escapeHtml(device.status)}"><span class="dot"></span>${escapeHtml(device.status)}</span></td>
       <td>${fmt(device.latency_ms, " ms")}</td>
       <td>${fmt(device.packet_loss, "%")}</td>
@@ -101,7 +110,7 @@ function renderTopology() {
     return `
       <div class="node ${node.status}">
         <strong>${escapeHtml(node.name)}</strong>
-        <small>${escapeHtml(node.ip_address)} · ${node.source === "discovered" ? "live" : "demo"}</small>
+        <small>${escapeHtml(node.ip_address)} · ${sourceLabel(node.source)}</small>
       </div>
     `;
   }).join("");
@@ -114,6 +123,19 @@ function renderUsers() {
       <td>${escapeHtml(user.role)}</td>
       <td>${user.is_active ? "active" : "disabled"}</td>
       <td>${user.must_change_password ? "temporary" : "changed"}</td>
+    </tr>
+  `).join("");
+}
+
+function renderAgents() {
+  document.querySelector("#agentRows").innerHTML = state.agents.map((agent) => `
+    <tr>
+      <td>${escapeHtml(agent.name)}</td>
+      <td>${agent.is_active ? "active" : "revoked"}</td>
+      <td>${agent.last_seen ? new Date(agent.last_seen).toLocaleString() : "never"}</td>
+      <td>
+        ${agent.is_active ? `<button class="secondary-button revoke-agent" data-agent-id="${agent.id}" type="button">Revoke</button>` : ""}
+      </td>
     </tr>
   `).join("");
 }
@@ -164,6 +186,30 @@ document.querySelector("#userForm").addEventListener("submit", async (event) => 
   renderUsers();
 });
 
+document.querySelector("#agentForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const nameInput = document.querySelector("#agentName");
+  const result = await api("/api/agents", {
+    method: "POST",
+    body: JSON.stringify({ name: nameInput.value }),
+  });
+  document.querySelector("#agentCredential").textContent =
+    `Token (shown once): ${result.token}\n` +
+    `Server: ${window.location.origin}\n` +
+    "Set TARAQQUB_AGENT_NETWORK to your authorized private /24 subnet.";
+  nameInput.value = "";
+  state.agents = await api("/api/agents");
+  renderAgents();
+});
+
+document.querySelector("#agentRows").addEventListener("click", async (event) => {
+  const button = event.target.closest(".revoke-agent");
+  if (!button) return;
+  await api(`/api/agents/${button.dataset.agentId}/revoke`, { method: "POST" });
+  state.agents = await api("/api/agents");
+  renderAgents();
+});
+
 document.querySelector("#discoveryBtn").addEventListener("click", async () => {
   const button = document.querySelector("#discoveryBtn");
   const output = document.querySelector("#discoveryOutput");
@@ -210,7 +256,10 @@ document.querySelector("#assistantForm").addEventListener("submit", async (event
 });
 
 async function bootstrap() {
-  state.session = await api("/api/auth/session");
+  [state.session, state.publicConfig] = await Promise.all([
+    api("/api/auth/session"),
+    api("/api/public-config"),
+  ]);
   if (state.session.must_change_password) {
     window.location.replace("/change-password");
     return;
@@ -223,9 +272,14 @@ async function bootstrap() {
   if (state.session.role === "admin") {
     document.querySelector("#users").classList.remove("hidden");
     document.querySelector("#usersNav").classList.remove("hidden");
+    document.querySelector("#agents").classList.remove("hidden");
+    document.querySelector("#agentsNav").classList.remove("hidden");
     state.users = await api("/api/admin/users");
+    state.agents = await api("/api/agents");
     renderUsers();
-  } else {
+    renderAgents();
+  }
+  if (state.session.role !== "admin" || state.publicConfig.public_demo) {
     document.querySelector("#discoveryBtn").classList.add("hidden");
   }
   await safeRefresh();

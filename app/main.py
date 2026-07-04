@@ -6,12 +6,20 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.advisor import analyze_incident
+from app.agents import (
+    authenticate_agent,
+    create_agent,
+    ingest_report,
+    list_agents,
+    revoke_agent,
+)
 from app.auth import (
     audit,
     authenticate,
     change_user_password,
     create_user_account,
     create_session,
+    create_signup_account,
     destroy_session,
     ensure_admin_user,
     ensure_demo_user,
@@ -31,10 +39,13 @@ from app.config import get_settings
 from app.database import init_db
 from app.discovery import scan_local_network
 from app.schemas import (
+    AgentCreate,
+    AgentReport,
     DeviceCreate,
     IncidentQuestion,
     LoginRequest,
     PasswordChange,
+    SignupRequest,
     UserCreate,
 )
 from app.services import (
@@ -61,7 +72,7 @@ async def lifespan(app: FastAPI):
         task.cancel()
 
 
-app = FastAPI(title="Taraqqub Shabaki", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Taraqqub Shabaki", version="0.2.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
@@ -118,6 +129,15 @@ def change_password_page(request: Request):
     return FileResponse("app/static/change-password.html")
 
 
+@app.get("/signup")
+def signup_page(request: Request):
+    if not get_settings().allow_signup:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if get_user_from_request(request):
+        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+    return FileResponse("app/static/signup.html")
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "taraqqub-shabaki"}
@@ -125,7 +145,30 @@ def health():
 
 @app.get("/api/public-config")
 def public_config():
-    return {"public_demo": get_settings().public_demo}
+    settings = get_settings()
+    return {
+        "public_demo": settings.public_demo,
+        "allow_signup": settings.allow_signup,
+    }
+
+
+@app.post("/api/auth/signup", status_code=201)
+def signup(payload: SignupRequest, request: Request, response: Response):
+    client_ip = request.client.host if request.client else "unknown"
+    user = create_signup_account(
+        payload.username,
+        payload.password,
+        payload.workspace_name,
+        client_ip,
+    )
+    csrf_token = create_session(user["id"], response)
+    audit(user["id"], "signup.success", "Workspace account created", request)
+    return {
+        "username": user["username"],
+        "role": user["role"],
+        "csrf_token": csrf_token,
+        "must_change_password": False,
+    }
 
 
 @app.post("/api/auth/login")
@@ -143,6 +186,7 @@ def login(payload: LoginRequest, request: Request, response: Response):
     return {
         "username": user["username"],
         "role": user["role"],
+        "workspace_id": user["workspace_id"],
         "csrf_token": csrf_token,
         "must_change_password": bool(user["must_change_password"]),
     }
@@ -157,6 +201,7 @@ def demo_login(request: Request, response: Response):
     return {
         "username": user["username"],
         "role": user["role"],
+        "workspace_id": user["workspace_id"],
         "csrf_token": csrf_token,
         "must_change_password": False,
     }
@@ -167,6 +212,7 @@ def auth_session(user: dict = Depends(require_session_user)):
     return {
         "username": user["username"],
         "role": user["role"],
+        "workspace_id": user["workspace_id"],
         "csrf_token": user["csrf_token"],
         "must_change_password": bool(user["must_change_password"]),
     }
@@ -195,8 +241,8 @@ def logout(
 
 
 @app.get("/api/admin/users")
-def users_admin(_user: dict = Depends(require_admin)):
-    return list_user_accounts()
+def users_admin(user: dict = Depends(require_admin)):
+    return list_user_accounts(user["workspace_id"])
 
 
 @app.post("/api/admin/users", status_code=201)
@@ -206,7 +252,9 @@ def create_user(
     user: dict = Depends(require_admin_csrf),
 ):
     try:
-        account = create_user_account(payload.username, payload.role)
+        account = create_user_account(
+            payload.username, payload.role, user["workspace_id"]
+        )
         audit(
             user["id"],
             "user.create",
@@ -219,8 +267,8 @@ def create_user(
 
 
 @app.get("/api/devices")
-def devices(_user: dict = Depends(require_user)):
-    return list_devices()
+def devices(user: dict = Depends(require_user)):
+    return list_devices(user)
 
 
 @app.post("/api/devices", status_code=201)
@@ -230,7 +278,7 @@ def create_device(
     user: dict = Depends(require_admin_csrf),
 ):
     try:
-        device = add_device(payload)
+        device = add_device(payload, user)
         audit(user["id"], "device.create", f"device_id={device['id']}", request)
         return device
     except Exception as exc:
@@ -241,14 +289,16 @@ def create_device(
 def metrics(
     device_id: int | None = None,
     limit: int = 120,
-    _user: dict = Depends(require_user),
+    user: dict = Depends(require_user),
 ):
-    return recent_metrics(device_id=device_id, limit=limit)
+    return recent_metrics(
+        user, device_id=device_id, limit=max(1, min(limit, 500))
+    )
 
 
 @app.get("/api/alerts")
-def alerts(_user: dict = Depends(require_user)):
-    return list_alerts()
+def alerts(user: dict = Depends(require_user)):
+    return list_alerts(user)
 
 
 @app.post("/api/alerts/{alert_id}/ack")
@@ -257,14 +307,47 @@ def ack_alert(
     request: Request,
     user: dict = Depends(require_operator_csrf),
 ):
-    result = acknowledge_alert(alert_id)
+    result = acknowledge_alert(alert_id, user)
     audit(user["id"], "alert.acknowledge", f"alert_id={alert_id}", request)
     return result
 
 
 @app.get("/api/topology")
-def get_topology(_user: dict = Depends(require_user)):
-    return topology()
+def get_topology(user: dict = Depends(require_user)):
+    return topology(user)
+
+
+@app.get("/api/agents")
+def agents_admin(user: dict = Depends(require_admin)):
+    return list_agents(user["workspace_id"])
+
+
+@app.post("/api/agents", status_code=201)
+def create_network_agent(
+    payload: AgentCreate,
+    request: Request,
+    user: dict = Depends(require_admin_csrf),
+):
+    agent = create_agent(user["workspace_id"], payload.name)
+    audit(user["id"], "agent.create", f"agent_id={agent['id']}", request)
+    return agent
+
+
+@app.post("/api/agents/{agent_id}/revoke")
+def revoke_network_agent(
+    agent_id: int,
+    request: Request,
+    user: dict = Depends(require_admin_csrf),
+):
+    agent = revoke_agent(user["workspace_id"], agent_id)
+    audit(user["id"], "agent.revoke", f"agent_id={agent_id}", request)
+    return agent
+
+
+@app.post("/api/agent/v1/report")
+def receive_agent_report(payload: AgentReport, request: Request):
+    agent = authenticate_agent(request)
+    return ingest_report(agent, payload.devices)
 
 
 @app.post("/api/discovery/preview")
@@ -298,6 +381,6 @@ def live_discovery(
 @app.post("/api/advisor/analyze")
 def advisor_analyze(
     payload: IncidentQuestion,
-    _user: dict = Depends(require_csrf),
+    user: dict = Depends(require_csrf),
 ):
-    return analyze_incident(payload.device_id, payload.symptom)
+    return analyze_incident(user, payload.device_id, payload.symptom)

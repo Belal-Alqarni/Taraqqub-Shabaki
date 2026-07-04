@@ -2,6 +2,7 @@ const form = document.querySelector("#loginForm");
 const button = document.querySelector("#loginButton");
 const errorOutput = document.querySelector("#loginError");
 const demoButton = document.querySelector("#demoButton");
+const signupLink = document.querySelector("#signupLink");
 
 async function openSession(path, options = {}) {
   const response = await fetch(path, options);
@@ -52,5 +53,6 @@ fetch("/api/public-config")
   .then((response) => response.json())
   .then((config) => {
     if (config.public_demo) demoButton.classList.remove("hidden");
+    if (config.allow_signup) signupLink.classList.remove("hidden");
   })
   .catch(() => {});

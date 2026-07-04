@@ -52,12 +52,71 @@ CREATE TABLE IF NOT EXISTS links (
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id INTEGER,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'viewer',
     is_active INTEGER NOT NULL DEFAULT 1,
     must_change_password INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS workspaces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS agents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    last_seen TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(workspace_id) REFERENCES workspaces(id)
+);
+
+CREATE TABLE IF NOT EXISTS managed_devices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workspace_id INTEGER NOT NULL,
+    agent_id INTEGER,
+    name TEXT NOT NULL,
+    ip_address TEXT NOT NULL,
+    role TEXT NOT NULL,
+    vendor TEXT NOT NULL DEFAULT 'Unknown',
+    status TEXT NOT NULL DEFAULT 'unknown',
+    location TEXT NOT NULL DEFAULT 'Local Network',
+    source TEXT NOT NULL DEFAULT 'agent',
+    last_seen TEXT NOT NULL,
+    FOREIGN KEY(workspace_id) REFERENCES workspaces(id),
+    FOREIGN KEY(agent_id) REFERENCES agents(id),
+    UNIQUE(workspace_id, ip_address)
+);
+
+CREATE TABLE IF NOT EXISTS managed_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id INTEGER NOT NULL,
+    timestamp TEXT NOT NULL,
+    latency_ms REAL NOT NULL,
+    packet_loss REAL NOT NULL,
+    cpu_usage REAL NOT NULL,
+    memory_usage REAL NOT NULL,
+    traffic_in_mbps REAL NOT NULL,
+    traffic_out_mbps REAL NOT NULL,
+    FOREIGN KEY(device_id) REFERENCES managed_devices(id)
+);
+
+CREATE TABLE IF NOT EXISTS managed_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id INTEGER NOT NULL,
+    severity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(device_id) REFERENCES managed_devices(id)
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -82,6 +141,10 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_token_hash ON sessions(token_hash);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_agents_workspace ON agents(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_managed_devices_workspace ON managed_devices(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_managed_metrics_device ON managed_metrics(device_id);
+CREATE INDEX IF NOT EXISTS idx_managed_alerts_device ON managed_alerts(device_id);
 """
 
 
@@ -130,6 +193,8 @@ def init_db() -> None:
             conn.execute(
                 "ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0"
             )
+        if "workspace_id" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN workspace_id INTEGER")
         count = conn.execute("SELECT COUNT(*) AS total FROM devices").fetchone()["total"]
         if count == 0:
             conn.executemany(

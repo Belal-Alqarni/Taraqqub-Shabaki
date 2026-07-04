@@ -18,6 +18,7 @@ LOGIN_WINDOW_SECONDS = 300
 LOGIN_ATTEMPT_LIMIT = 10
 _login_attempts: dict[str, list[float]] = defaultdict(list)
 _demo_attempts: dict[str, list[float]] = defaultdict(list)
+_signup_attempts: dict[str, list[float]] = defaultdict(list)
 
 
 def utc_now() -> datetime:
@@ -55,6 +56,14 @@ def token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def create_workspace(conn, name: str) -> int:
+    cursor = conn.execute(
+        "INSERT INTO workspaces (name, created_at) VALUES (?, ?)",
+        (name.strip()[:80], utc_now().isoformat()),
+    )
+    return int(cursor.lastrowid)
+
+
 def ensure_admin_user() -> None:
     settings = get_settings()
     admin_username = settings.admin_username.strip().lower()
@@ -70,28 +79,38 @@ def ensure_admin_user() -> None:
 
     with connect() as conn:
         existing = conn.execute(
-            "SELECT id, password_hash FROM users WHERE username = ?",
+            "SELECT id, workspace_id, password_hash FROM users WHERE username = ?",
             (admin_username,),
         ).fetchone()
         if not existing:
+            workspace_id = create_workspace(conn, "Primary Workspace")
             conn.execute(
                 """
-                INSERT INTO users (username, password_hash, role, is_active, created_at)
-                VALUES (?, ?, 'admin', 1, ?)
+                INSERT INTO users (
+                    workspace_id, username, password_hash, role, is_active, created_at
+                ) VALUES (?, ?, ?, 'admin', 1, ?)
                 """,
                 (
+                    workspace_id,
                     admin_username,
                     hash_password(settings.admin_password),
                     utc_now().isoformat(),
                 ),
             )
-        elif settings.app_env == "production" and not verify_password(
-            settings.admin_password, existing["password_hash"]
-        ):
-            conn.execute(
-                "UPDATE users SET password_hash = ? WHERE id = ?",
-                (hash_password(settings.admin_password), existing["id"]),
-            )
+        else:
+            if not existing["workspace_id"]:
+                workspace_id = create_workspace(conn, "Primary Workspace")
+                conn.execute(
+                    "UPDATE users SET workspace_id = ? WHERE id = ?",
+                    (workspace_id, existing["id"]),
+                )
+            if settings.app_env == "production" and not verify_password(
+                settings.admin_password, existing["password_hash"]
+            ):
+                conn.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (hash_password(settings.admin_password), existing["id"]),
+                )
 
 
 def ensure_demo_user() -> None:
@@ -100,17 +119,28 @@ def ensure_demo_user() -> None:
 
     with connect() as conn:
         existing = conn.execute(
-            "SELECT id FROM users WHERE username = 'demo'"
+            "SELECT id, workspace_id FROM users WHERE username = 'demo'"
         ).fetchone()
         if not existing:
+            workspace_id = create_workspace(conn, "Public Demo")
             conn.execute(
                 """
                 INSERT INTO users (
-                    username, password_hash, role, is_active,
+                    workspace_id, username, password_hash, role, is_active,
                     must_change_password, created_at
-                ) VALUES ('demo', ?, 'viewer', 1, 0, ?)
+                ) VALUES (?, 'demo', ?, 'viewer', 1, 0, ?)
                 """,
-                (hash_password(secrets.token_urlsafe(32)), utc_now().isoformat()),
+                (
+                    workspace_id,
+                    hash_password(secrets.token_urlsafe(32)),
+                    utc_now().isoformat(),
+                ),
+            )
+        elif not existing["workspace_id"]:
+            workspace_id = create_workspace(conn, "Public Demo")
+            conn.execute(
+                "UPDATE users SET workspace_id = ? WHERE id = ?",
+                (workspace_id, existing["id"]),
             )
 
 
@@ -143,6 +173,22 @@ def check_demo_rate_limit(client_ip: str) -> None:
         )
     recent.append(now)
     _demo_attempts[client_ip] = recent
+
+
+def check_signup_rate_limit(client_ip: str) -> None:
+    now = monotonic()
+    recent = [
+        timestamp
+        for timestamp in _signup_attempts[client_ip]
+        if now - timestamp < LOGIN_WINDOW_SECONDS
+    ]
+    if len(recent) >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many signup attempts. Try again later.",
+        )
+    recent.append(now)
+    _signup_attempts[client_ip] = recent
 
 
 def get_demo_user(client_ip: str) -> dict:
@@ -220,7 +266,7 @@ def get_user_from_request(request: Request) -> dict | None:
         row = conn.execute(
             """
             SELECT u.id, u.username, u.role, u.must_change_password,
-                   s.id AS session_id, s.csrf_token
+                   u.workspace_id, s.id AS session_id, s.csrf_token
             FROM sessions s
             JOIN users u ON u.id = s.user_id
             WHERE s.token_hash = ? AND s.expires_at > ? AND u.is_active = 1
@@ -294,29 +340,33 @@ def require_operator_csrf(user: dict = Depends(require_csrf)) -> dict:
     return user
 
 
-def list_user_accounts() -> list[dict]:
+def list_user_accounts(workspace_id: int) -> list[dict]:
     with connect() as conn:
         rows = conn.execute(
             """
             SELECT id, username, role, is_active, must_change_password, created_at
             FROM users
+            WHERE workspace_id = ?
             ORDER BY id
-            """
+            """,
+            (workspace_id,),
         ).fetchall()
     return [dict(row) for row in rows]
 
 
-def create_user_account(username: str, role: str) -> dict:
+def create_user_account(username: str, role: str, workspace_id: int) -> dict:
     temporary_password = secrets.token_urlsafe(14)
     normalized_username = username.strip().lower()
     with connect() as conn:
         cursor = conn.execute(
             """
             INSERT INTO users (
-                username, password_hash, role, is_active, must_change_password, created_at
-            ) VALUES (?, ?, ?, 1, 1, ?)
+                workspace_id, username, password_hash, role, is_active,
+                must_change_password, created_at
+            ) VALUES (?, ?, ?, ?, 1, 1, ?)
             """,
             (
+                workspace_id,
                 normalized_username,
                 hash_password(temporary_password),
                 role,
@@ -333,6 +383,50 @@ def create_user_account(username: str, role: str) -> dict:
     result = dict(row)
     result["temporary_password"] = temporary_password
     return result
+
+
+def create_signup_account(
+    username: str, password: str, workspace_name: str, client_ip: str
+) -> dict:
+    if not get_settings().allow_signup:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    check_signup_rate_limit(client_ip)
+    if len(password) < 12:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least 12 characters.",
+        )
+
+    normalized_username = username.strip().lower()
+    try:
+        with connect() as conn:
+            workspace_id = create_workspace(conn, workspace_name)
+            cursor = conn.execute(
+                """
+                INSERT INTO users (
+                    workspace_id, username, password_hash, role, is_active,
+                    must_change_password, created_at
+                ) VALUES (?, ?, ?, 'admin', 1, 0, ?)
+                """,
+                (
+                    workspace_id,
+                    normalized_username,
+                    hash_password(password),
+                    utc_now().isoformat(),
+                ),
+            )
+            return {
+                "id": int(cursor.lastrowid),
+                "workspace_id": workspace_id,
+                "username": normalized_username,
+                "role": "admin",
+                "must_change_password": False,
+            }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists.",
+        ) from exc
 
 
 def change_user_password(

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create account · ترقّب شبكي | Taraqqub Shabaki</title>
+    <link rel="stylesheet" href="/static/styles.css?v=8">
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-panel" aria-labelledby="signupTitle">
+        <div class="brand">
+          <div>
+            <strong><span lang="ar" dir="rtl">ترقّب شبكي</span> | Taraqqub Shabaki</strong>
+            <small>Create an isolated network workspace</small>
+          </div>
+        </div>
+        <h1 id="signupTitle">Create account</h1>
+        <form id="signupForm" class="login-form">
+          <label for="workspaceName">Workspace name</label>
+          <input id="workspaceName" maxlength="80" autocomplete="organization" required>
+          <label for="username">Username</label>
+          <input id="username" maxlength="80" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
+          <label for="password">Password</label>
+          <input id="password" type="password" minlength="12" maxlength="200" autocomplete="new-password" required>
+          <button id="signupButton" type="submit">Create account</button>
+        </form>
+        <a class="signup-link" href="/login">Back to sign in</a>
+        <p id="signupError" class="form-error" role="alert"></p>
+      </section>
+    </main>
+    <script src="/static/signup.js?v=1"></script>
+  </body>
+</html>

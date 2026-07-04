@@ -24,6 +24,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: Inter, Segoe UI, Arial, sans-serif;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -89,8 +90,15 @@ nav a:hover {
 }
 
 main {
+  min-width: 0;
   padding: 28px;
   overflow: auto;
+}
+
+.topbar > div,
+.panel,
+.grid > * {
+  min-width: 0;
 }
 
 .topbar,
@@ -110,6 +118,7 @@ p {
 
 h1 {
   font-size: 30px;
+  overflow-wrap: anywhere;
 }
 
 h2 {
@@ -365,6 +374,13 @@ pre {
   margin-top: 12px;
 }
 
+.signup-link {
+  display: block;
+  margin-top: 16px;
+  color: var(--accent);
+  text-align: center;
+}
+
 .demo-notice {
   margin-bottom: 18px;
   padding: 11px 14px;
@@ -396,6 +412,14 @@ pre {
   overflow-wrap: anywhere;
 }
 
+.agent-credential {
+  min-height: 0;
+  margin-top: 16px;
+  color: #dcecff;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .users-table {
   min-width: 560px;
 }
@@ -416,7 +440,7 @@ pre {
   }
 
   nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .kpis,
