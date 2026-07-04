@@ -1,6 +1,8 @@
 # ترقّب شبكي | Taraqqub Shabaki
 
 [![CI](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/actions/workflows/ci.yml/badge.svg)](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/badge/release-v1.0.0-49b6ff)](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-45d483.svg)](LICENSE)
 
 [Try the live public demo](https://taraqqub-shabaki-demo.onrender.com) - viewer-only
 simulated data; the free instance can take up to a minute to wake up.
@@ -16,7 +18,7 @@ guided incident response in one self-hosted Network Operations Center.
 منظمة لتشخيص الأعطال.
 
 المشروع ليس برنامج Ping فقط. الهدف هو بناء Control Plane قريب في فكرته من
-أدوات NOC الاحترافية، مع فصل آمن مستقبلي بين المنصة السحابية وAgent يعمل داخل
+أدوات NOC الاحترافية، مع فصل آمن بين المنصة السحابية وAgent يعمل داخل
 شبكة كل مستخدم.
 
 ![Taraqqub Shabaki dashboard](docs/dashboard.png)
@@ -38,6 +40,13 @@ guided incident response in one self-hosted Network Operations Center.
 The Incident Advisor is intentionally described as **rule-based**. A real LLM
 integration is a future milestone, not a feature claimed by the current release.
 
+## Release Model
+
+Version `1.0.0` is a complete self-hosted release. Operators run the control
+plane with Docker and connect one or more outbound-only network agents. The
+hosted Render URL is intentionally a portfolio-safe demo, not a managed
+production SaaS offering.
+
 ## User Roles
 
 | Role | Access |
@@ -49,6 +58,10 @@ integration is a future milestone, not a feature claimed by the current release.
 Public sign-up is controlled by `TARAQQUB_ALLOW_SIGNUP`. Each signup creates an
 isolated workspace and an administrator account. Team accounts created by that
 administrator remain inside the same workspace.
+
+For an internet-facing installation, use persistent storage before enabling
+signup. The included free Render demo keeps signup disabled because its local
+SQLite filesystem is ephemeral.
 
 ## Architecture
 
@@ -107,6 +120,7 @@ Create a local `.env` file:
 ```env
 TARAQQUB_ADMIN_PASSWORD=replace-with-a-long-random-password
 TARAQQUB_SECURE_COOKIES=false
+TARAQQUB_ALLOW_SIGNUP=false
 TARAQQUB_SCAN_NETWORK=192.168.1.0/24
 TARAQQUB_SCAN_GATEWAY=192.168.1.1
 ```
@@ -190,6 +204,8 @@ Dockerfile         Hardened application image
 Dockerfile.agent   Hardened local agent image
 docker-compose.yml Local private deployment
 render.yaml        Safe public-demo deployment
+CHANGELOG.md       Version history
+LICENSE            MIT open-source license
 ```
 
 ## Roadmap
