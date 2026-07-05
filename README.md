@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/badge/release-v1.0.0-49b6ff)](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-45d483.svg)](LICENSE)
 
-[Try the live public demo](https://taraqqub-shabaki-demo.onrender.com) - viewer-only
+[Try the live public demo](https://taraqqub-shabaki.onrender.com) - viewer-only
 simulated data; the free instance can take up to a minute to wake up.
 
 Secure network monitoring, discovery, alerting, topology visualization, and
