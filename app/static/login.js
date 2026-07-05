@@ -4,12 +4,37 @@ const errorOutput = document.querySelector("#loginError");
 const demoButton = document.querySelector("#demoButton");
 const signupLink = document.querySelector("#signupLink");
 
-async function openSession(path, options = {}) {
+const wait = (milliseconds) =>
+  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+async function request(path, options = {}, retries = 2) {
   const response = await fetch(path, options);
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.detail || "Sign in failed.");
+  const body = await response.text();
+
+  if (
+    !response.ok &&
+    retries > 0 &&
+    response.headers.get("x-render-routing") === "no-server"
+  ) {
+    await wait(800);
+    return request(path, options, retries - 1);
   }
+
+  let result = {};
+  try {
+    result = body ? JSON.parse(body) : {};
+  } catch {
+    result = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(result.detail || "Service is waking up. Please try again.");
+  }
+  return result;
+}
+
+async function openSession(path, options = {}) {
+  const result = await request(path, options);
   window.location.replace(result.must_change_password ? "/change-password" : "/");
 }
 
@@ -49,8 +74,7 @@ demoButton.addEventListener("click", async () => {
   }
 });
 
-fetch("/api/public-config")
-  .then((response) => response.json())
+request("/api/public-config")
   .then((config) => {
     if (config.public_demo) demoButton.classList.remove("hidden");
     if (config.allow_signup) signupLink.classList.remove("hidden");
