@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.database import connect, rows_to_dicts
+from app.database import connect, insert_and_get_id, rows_to_dicts
 
 
 def list_devices(user: dict) -> list[dict]:
@@ -50,7 +50,8 @@ def list_devices(user: dict) -> list[dict]:
 def add_device(payload, user: dict) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     with connect() as conn:
-        cursor = conn.execute(
+        device_id = insert_and_get_id(
+            conn,
             """
             INSERT INTO managed_devices (
                 workspace_id, name, ip_address, role, vendor, location,
@@ -69,7 +70,7 @@ def add_device(payload, user: dict) -> dict:
         )
         row = conn.execute(
             "SELECT * FROM managed_devices WHERE id = ? AND workspace_id = ?",
-            (cursor.lastrowid, user["workspace_id"]),
+            (device_id, user["workspace_id"]),
         ).fetchone()
         return dict(row)
 

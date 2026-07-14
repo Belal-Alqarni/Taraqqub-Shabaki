@@ -6,7 +6,7 @@ from time import monotonic
 from fastapi import HTTPException, Request, status
 
 from app.auth import token_hash, utc_now
-from app.database import connect, rows_to_dicts
+from app.database import connect, insert_and_get_id, rows_to_dicts
 
 
 REPORT_WINDOW_SECONDS = 300
@@ -18,14 +18,14 @@ def create_agent(workspace_id: int, name: str) -> dict:
     raw_token = f"tqs_{secrets.token_urlsafe(32)}"
     now = utc_now().isoformat()
     with connect() as conn:
-        cursor = conn.execute(
+        agent_id = insert_and_get_id(
+            conn,
             """
             INSERT INTO agents (workspace_id, name, token_hash, created_at)
             VALUES (?, ?, ?, ?)
             """,
             (workspace_id, name.strip(), token_hash(raw_token), now),
         )
-        agent_id = int(cursor.lastrowid)
     return {
         "id": agent_id,
         "name": name.strip(),

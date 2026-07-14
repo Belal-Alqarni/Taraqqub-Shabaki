@@ -4,8 +4,9 @@
 [![Release](https://img.shields.io/badge/release-v1.0.0-49b6ff)](https://github.com/Belal-Alqarni/Taraqqub-Shabaki/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-45d483.svg)](LICENSE)
 
-[Try the live public demo](https://taraqqub-shabaki.onrender.com) - viewer-only
-simulated data; the free instance can take up to a minute to wake up.
+[Open the hosted public app](https://taraqqub-shabaki.onrender.com) - visitors
+can explore the safe demo mode, and production deployments can enable public
+signup with persistent PostgreSQL-backed workspaces.
 
 Secure network monitoring, discovery, alerting, topology visualization, and
 guided incident response in one self-hosted Network Operations Center.
@@ -35,7 +36,7 @@ guided incident response in one self-hosted Network Operations Center.
 | Access control | Isolated workspaces with `viewer`, `operator`, and `admin` roles |
 | Network Agent | Revocable token, private `/24` discovery, and outbound HTTPS reports |
 | Public demo | Viewer-only simulated environment with all network scanning disabled |
-| Deployment | Hardened Docker image, Docker Compose, health check, and Render Blueprint |
+| Deployment | Hardened Docker image, Docker Compose, PostgreSQL support, health check, and Render Blueprint |
 
 The Incident Advisor is intentionally described as **rule-based**. A real LLM
 integration is a future milestone, not a feature claimed by the current release.
@@ -44,8 +45,9 @@ integration is a future milestone, not a feature claimed by the current release.
 
 Version `1.0.0` is a complete self-hosted release. Operators run the control
 plane with Docker and connect one or more outbound-only network agents. The
-hosted Render URL is intentionally a portfolio-safe demo, not a managed
-production SaaS offering.
+hosted Render deployment is portfolio-safe: direct cloud-side discovery is
+disabled, while real users can monitor their own networks through the local
+Network Agent model after persistent PostgreSQL signup is enabled.
 
 ## User Roles
 
@@ -57,11 +59,15 @@ production SaaS offering.
 
 Public sign-up is controlled by `TARAQQUB_ALLOW_SIGNUP`. Each signup creates an
 isolated workspace and an administrator account. Team accounts created by that
-administrator remain inside the same workspace.
+administrator remain inside the same workspace. Hosted installations must set
+`TARAQQUB_DATABASE_URL` to a persistent PostgreSQL database before enabling
+sign-up.
 
 For an internet-facing installation, use persistent storage before enabling
-signup. The included free Render demo keeps signup disabled because its local
-SQLite filesystem is ephemeral.
+signup. SQLite remains the default for local Docker deployments, while hosted
+deployments use PostgreSQL through `TARAQQUB_DATABASE_URL`. The Render Blueprint
+in this repository provisions a PostgreSQL database and enables signup for a
+public multi-user deployment.
 
 ## Architecture
 
@@ -123,6 +129,13 @@ TARAQQUB_SECURE_COOKIES=false
 TARAQQUB_ALLOW_SIGNUP=false
 TARAQQUB_SCAN_NETWORK=192.168.1.0/24
 TARAQQUB_SCAN_GATEWAY=192.168.1.1
+```
+
+For a hosted multi-user deployment, also set:
+
+```env
+TARAQQUB_DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+TARAQQUB_ALLOW_SIGNUP=true
 ```
 
 Only configure a network you own or are explicitly authorized to test.

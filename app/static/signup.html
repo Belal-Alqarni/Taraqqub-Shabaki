@@ -1,34 +1,81 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Create account · ترقّب شبكي | Taraqqub Shabaki</title>
-    <link rel="stylesheet" href="/static/styles.css?v=8">
+    <title>إنشاء حساب · ترقّب شبكي | Taraqqub Shabaki</title>
+    <link rel="stylesheet" href="/static/styles.css?v=10">
   </head>
   <body class="login-page">
     <main class="login-shell">
-      <section class="login-panel" aria-labelledby="signupTitle">
-        <div class="brand">
-          <div>
-            <strong><span lang="ar" dir="rtl">ترقّب شبكي</span> | Taraqqub Shabaki</strong>
-            <small>Create an isolated network workspace</small>
-          </div>
+      <section class="login-panel signup-panel" aria-labelledby="signupTitle">
+        <header class="auth-brand">
+          <strong>
+            <span>ترقّب شبكي</span>
+            <span class="brand-divider">|</span>
+            <span dir="ltr">Taraqqub Shabaki</span>
+          </strong>
+          <small>مساحة مستقلة وآمنة لشبكتك</small>
+        </header>
+
+        <div class="auth-heading">
+          <span class="auth-kicker">ابدأ المراقبة</span>
+          <h1 id="signupTitle">إنشاء حساب جديد</h1>
+          <p>أنشئ مساحة عمل خاصة، ثم اربط Network Agent من داخل شبكتك.</p>
         </div>
-        <h1 id="signupTitle">Create account</h1>
+
         <form id="signupForm" class="login-form">
-          <label for="workspaceName">Workspace name</label>
-          <input id="workspaceName" maxlength="80" autocomplete="organization" required>
-          <label for="username">Username</label>
-          <input id="username" maxlength="80" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
-          <label for="password">Password</label>
-          <input id="password" type="password" minlength="12" maxlength="200" autocomplete="new-password" required>
-          <button id="signupButton" type="submit">Create account</button>
+          <div class="form-field">
+            <label for="workspaceName">اسم مساحة العمل</label>
+            <input
+              id="workspaceName"
+              maxlength="80"
+              autocomplete="organization"
+              required
+            >
+          </div>
+          <div class="form-field">
+            <label for="username">اسم المستخدم</label>
+            <input
+              id="username"
+              dir="ltr"
+              maxlength="80"
+              pattern="[A-Za-z0-9._-]+"
+              autocomplete="username"
+              required
+            >
+          </div>
+          <div class="form-field">
+            <label for="password">كلمة المرور</label>
+            <input
+              id="password"
+              dir="ltr"
+              type="password"
+              minlength="12"
+              maxlength="200"
+              autocomplete="new-password"
+              required
+            >
+            <small class="field-hint">12 حرفًا على الأقل.</small>
+          </div>
+          <div class="form-field">
+            <label for="confirmPassword">تأكيد كلمة المرور</label>
+            <input
+              id="confirmPassword"
+              dir="ltr"
+              type="password"
+              minlength="12"
+              maxlength="200"
+              autocomplete="new-password"
+              required
+            >
+          </div>
+          <button id="signupButton" type="submit">إنشاء الحساب</button>
         </form>
-        <a class="signup-link" href="/login">Back to sign in</a>
+        <a class="signup-link" href="/login">لديك حساب؟ سجّل الدخول</a>
         <p id="signupError" class="form-error" role="alert"></p>
       </section>
     </main>
-    <script src="/static/signup.js?v=1"></script>
+    <script src="/static/signup.js?v=3"></script>
   </body>
 </html>

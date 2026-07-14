@@ -10,13 +10,15 @@ services:
       - key: TARAQQUB_PUBLIC_DEMO
         value: "true"
       - key: TARAQQUB_ALLOW_SIGNUP
-        value: "false"
+        value: "true"
+      - key: TARAQQUB_DATABASE_URL
+        fromDatabase:
+          name: taraqqub-shabaki-db
+          property: connectionString
       - key: TARAQQUB_SECURE_COOKIES
         value: "true"
-      - key: TARAQQUB_DB_PATH
-        value: /tmp/taraqqub.db
       - key: TARAQQUB_MONITOR_INTERVAL
-        value: "10"
+        value: "60"
       - key: TARAQQUB_ENABLE_SELF_HEALING
         value: "false"
       - key: TARAQQUB_ADMIN_USERNAME
@@ -25,3 +27,9 @@ services:
         generateValue: true
       - key: TARAQQUB_SESSION_HOURS
         value: "4"
+
+databases:
+  - name: taraqqub-shabaki-db
+    plan: free
+    databaseName: taraqqub
+    user: taraqqub

@@ -1,43 +1,70 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign in · ترقّب شبكي | Taraqqub Shabaki</title>
-    <link rel="stylesheet" href="/static/styles.css?v=8">
+    <title>تسجيل الدخول · ترقّب شبكي | Taraqqub Shabaki</title>
+    <link rel="stylesheet" href="/static/styles.css?v=10">
   </head>
   <body class="login-page">
     <main class="login-shell">
       <section class="login-panel" aria-labelledby="loginTitle">
-        <div class="brand">
-          <div>
-            <strong><span lang="ar" dir="rtl">ترقّب شبكي</span> | Taraqqub Shabaki</strong>
-            <small>Secure Operations Access</small>
-          </div>
+        <header class="auth-brand">
+          <strong>
+            <span>ترقّب شبكي</span>
+            <span class="brand-divider">|</span>
+            <span dir="ltr">Taraqqub Shabaki</span>
+          </strong>
+          <small>منصة آمنة لمراقبة الشبكات</small>
+        </header>
+
+        <div class="auth-heading">
+          <span class="auth-kicker">الوصول إلى مساحة العمل</span>
+          <h1 id="loginTitle">تسجيل الدخول</h1>
+          <p>تابع مراقبة أجهزتك وتنبيهات شبكتك من مكان واحد.</p>
         </div>
-        <h1 id="loginTitle">Sign in</h1>
-        <p>Use your operations account to continue.</p>
+
         <form id="loginForm" class="login-form">
-          <label for="username">Username</label>
-          <input id="username" name="username" autocomplete="username" required>
-          <label for="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            minlength="8"
-            required
-          >
-          <button id="loginButton" type="submit">Sign in</button>
+          <div class="form-field">
+            <label for="username">اسم المستخدم</label>
+            <input
+              id="username"
+              name="username"
+              dir="ltr"
+              autocomplete="username"
+              required
+            >
+          </div>
+          <div class="form-field">
+            <label for="password">كلمة المرور</label>
+            <input
+              id="password"
+              name="password"
+              dir="ltr"
+              type="password"
+              autocomplete="current-password"
+              minlength="8"
+              required
+            >
+          </div>
+          <button id="loginButton" type="submit">تسجيل الدخول</button>
         </form>
-        <button id="demoButton" class="secondary-button demo-button hidden" type="button">
-          Try public demo
-        </button>
-        <a id="signupLink" class="signup-link hidden" href="/signup">Create an account</a>
+
+        <div class="auth-options">
+          <a id="signupLink" class="signup-link hidden" href="/signup">
+            إنشاء حساب ومساحة عمل
+          </a>
+          <button
+            id="demoButton"
+            class="secondary-button demo-button hidden"
+            type="button"
+          >
+            تجربة العرض العام
+          </button>
+        </div>
         <p id="loginError" class="form-error" role="alert"></p>
       </section>
     </main>
-    <script src="/static/login.js?v=7"></script>
+    <script src="/static/login.js?v=9"></script>
   </body>
 </html>

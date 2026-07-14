@@ -41,7 +41,7 @@ async function openSession(path, options = {}) {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   button.disabled = true;
-  button.textContent = "Signing in...";
+  button.textContent = "جارٍ تسجيل الدخول...";
   errorOutput.textContent = "";
 
   try {
@@ -57,20 +57,20 @@ form.addEventListener("submit", async (event) => {
     errorOutput.textContent = error.message;
   } finally {
     button.disabled = false;
-    button.textContent = "Sign in";
+    button.textContent = "تسجيل الدخول";
   }
 });
 
 demoButton.addEventListener("click", async () => {
   demoButton.disabled = true;
-  demoButton.textContent = "Opening demo...";
+  demoButton.textContent = "جارٍ فتح العرض...";
   errorOutput.textContent = "";
   try {
     await openSession("/api/auth/demo", { method: "POST" });
   } catch (error) {
     errorOutput.textContent = error.message;
     demoButton.disabled = false;
-    demoButton.textContent = "Try public demo";
+    demoButton.textContent = "تجربة العرض العام";
   }
 });
 

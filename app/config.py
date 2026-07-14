@@ -5,6 +5,7 @@ from os import getenv
 class Settings:
     def __init__(self) -> None:
         self.db_path = getenv("TARAQQUB_DB_PATH", "./data/taraqqub.db")
+        self.database_url = getenv("TARAQQUB_DATABASE_URL", "").strip() or None
         self.monitor_interval = int(getenv("TARAQQUB_MONITOR_INTERVAL", "10"))
         self.enable_self_healing = getenv("TARAQQUB_ENABLE_SELF_HEALING", "false").lower() == "true"
         self.app_env = getenv("TARAQQUB_ENV", "development").lower()

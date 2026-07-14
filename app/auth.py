@@ -9,7 +9,7 @@ from time import monotonic
 from fastapi import Depends, HTTPException, Request, Response, status
 
 from app.config import get_settings
-from app.database import connect
+from app.database import connect, insert_and_get_id, is_integrity_error
 
 
 SESSION_COOKIE = "taraqqub_session"
@@ -57,11 +57,11 @@ def token_hash(token: str) -> str:
 
 
 def create_workspace(conn, name: str) -> int:
-    cursor = conn.execute(
+    return insert_and_get_id(
+        conn,
         "INSERT INTO workspaces (name, created_at) VALUES (?, ?)",
         (name.strip()[:80], utc_now().isoformat()),
     )
-    return int(cursor.lastrowid)
 
 
 def ensure_admin_user() -> None:
@@ -358,7 +358,8 @@ def create_user_account(username: str, role: str, workspace_id: int) -> dict:
     temporary_password = secrets.token_urlsafe(14)
     normalized_username = username.strip().lower()
     with connect() as conn:
-        cursor = conn.execute(
+        user_id = insert_and_get_id(
+            conn,
             """
             INSERT INTO users (
                 workspace_id, username, password_hash, role, is_active,
@@ -378,7 +379,7 @@ def create_user_account(username: str, role: str, workspace_id: int) -> dict:
             SELECT id, username, role, is_active, must_change_password, created_at
             FROM users WHERE id = ?
             """,
-            (cursor.lastrowid,),
+            (user_id,),
         ).fetchone()
     result = dict(row)
     result["temporary_password"] = temporary_password
@@ -401,7 +402,8 @@ def create_signup_account(
     try:
         with connect() as conn:
             workspace_id = create_workspace(conn, workspace_name)
-            cursor = conn.execute(
+            user_id = insert_and_get_id(
+                conn,
                 """
                 INSERT INTO users (
                     workspace_id, username, password_hash, role, is_active,
@@ -416,13 +418,15 @@ def create_signup_account(
                 ),
             )
             return {
-                "id": int(cursor.lastrowid),
+                "id": user_id,
                 "workspace_id": workspace_id,
                 "username": normalized_username,
                 "role": "admin",
                 "must_change_password": False,
             }
     except Exception as exc:
+        if not is_integrity_error(exc):
+            raise
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already exists.",

@@ -77,7 +77,14 @@ function renderDevices() {
     </tr>
   `).join("");
 
-  document.querySelector("#deviceRows").innerHTML = rows;
+  document.querySelector("#deviceRows").innerHTML = rows || `
+    <tr>
+      <td class="empty-cell" colspan="9">
+        No devices yet. Create a Network Agent token, run the agent inside your
+        authorized network, then refresh this dashboard.
+      </td>
+    </tr>
+  `;
   document.querySelector("#lastUpdated").textContent = `Updated ${new Date().toLocaleTimeString()}`;
 
   const options = [`<option value="">General incident</option>`].concat(
@@ -106,6 +113,16 @@ function renderTopology() {
   const map = document.querySelector("#topologyMap");
   if (!state.topology) return;
 
+  if (state.topology.nodes.length === 0) {
+    map.innerHTML = `
+      <div class="empty-state">
+        <strong>No topology yet</strong>
+        <small>Your private topology appears after an authorized agent reports devices.</small>
+      </div>
+    `;
+    return;
+  }
+
   map.innerHTML = state.topology.nodes.map((node) => {
     return `
       <div class="node ${node.status}">
@@ -117,7 +134,7 @@ function renderTopology() {
 }
 
 function renderUsers() {
-  document.querySelector("#userRows").innerHTML = state.users.map((user) => `
+  const rows = state.users.map((user) => `
     <tr>
       <td>${escapeHtml(user.username)}</td>
       <td>${escapeHtml(user.role)}</td>
@@ -125,10 +142,13 @@ function renderUsers() {
       <td>${user.must_change_password ? "temporary" : "changed"}</td>
     </tr>
   `).join("");
+  document.querySelector("#userRows").innerHTML = rows || `
+    <tr><td class="empty-cell" colspan="4">No workspace users yet.</td></tr>
+  `;
 }
 
 function renderAgents() {
-  document.querySelector("#agentRows").innerHTML = state.agents.map((agent) => `
+  const rows = state.agents.map((agent) => `
     <tr>
       <td>${escapeHtml(agent.name)}</td>
       <td>${agent.is_active ? "active" : "revoked"}</td>
@@ -138,6 +158,13 @@ function renderAgents() {
       </td>
     </tr>
   `).join("");
+  document.querySelector("#agentRows").innerHTML = rows || `
+    <tr>
+      <td class="empty-cell" colspan="4">
+        No agents yet. Create a token when you are ready to connect your network.
+      </td>
+    </tr>
+  `;
 }
 
 async function refresh() {
